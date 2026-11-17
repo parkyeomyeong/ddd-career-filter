@@ -1,5 +1,7 @@
-import { parseValues, pickRandom } from './values.js';
-import { drawTimeline, progress } from './timeline.js';
+// 캐시 무효화: index.html 이 붙여 준 ?v=값을 하위 모듈에도 그대로 붙여 항상 새 파일을 받는다.
+const V = new URL(import.meta.url).search;
+const { parseValues, pickRandom } = await import(`./values.js${V}`);
+const { drawTimeline, progress } = await import(`./timeline.js${V}`);
 
 const VALUES_URL = './filter-values.md';
 const SIGNAL_MS = 1200; // 시작 신호 길이

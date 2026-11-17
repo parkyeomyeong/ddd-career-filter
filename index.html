@@ -37,6 +37,7 @@
     <button id="save-btn" hidden>저장</button>
     <button id="retry-btn" hidden>다시 찍기</button>
   </div>
-  <script type="module" src="app.js"></script>
+  <!-- GitHub Pages 는 JS 를 10분 캐시함 → 매번 다른 주소로 불러 항상 최신 파일을 받는다 -->
+  <script type="module">import(`./app.js?v=${Date.now()}`);</script>
 </body>
 </html>
