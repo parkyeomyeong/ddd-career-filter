@@ -1,7 +1,7 @@
 // 왼쪽 세로 타임라인 (원조 필터 프레임 분석 기준).
 // 노란 점(테두리 없음)이 일정한 속도로 내려간다. 점이 노드를 지나면 노드가 노란색으로 채워지고 값이 뜬다.
 // 지나갈 때 점과 노드가 물방울처럼 늘어났다 떨어진다. 선은 첫 노드~마지막 노드 사이에만.
-export const STEP_MS = 4000; // 노드 사이 이동 시간 = 값 공개 간격
+export const STEP_MS = 3700; // 노드 사이 이동 시간 = 값 공개 간격
 export const HOLD_MS = 3000; // 마지막 값 공개 후 리액션 여유
 const INTRO_MS = 1500; // 시작: 점이 첫 노드 위에서 천천히 나타나는 시간 (이동 없음)
 const POP_MS = 350; // 점이 노드를 지날 때 살짝 커졌다 돌아오는 시간
@@ -82,8 +82,6 @@ export function drawTimeline(ctx, categories, picks, elapsedMs) {
   const y = (i) => FIRST_Y + i * NODE_GAP - offset;
 
   ctx.save();
-  ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.shadowBlur = 8;
 
   const top = y(0);
   const bottom = y(categories.length - 1);
@@ -98,7 +96,6 @@ export function drawTimeline(ctx, categories, picks, elapsedMs) {
     circle(ctx, LINE_X, ny, NODE_R, shown ? YELLOW : GRAY, true);
 
     ctx.save();
-    ctx.shadowBlur = 0;
     ctx.textBaseline = 'middle';
     ctx.textAlign = 'right';
     fitFont(ctx, c.name, LINE_X - 50, 36);
@@ -113,7 +110,6 @@ export function drawTimeline(ctx, categories, picks, elapsedMs) {
     ctx.restore();
   });
 
-  ctx.shadowBlur = 0;
   if (elapsedMs >= 0) {
     // 대기 중엔 점 없음. 시작하면 첫 노드 위에서 천천히 페이드인.
     ctx.globalAlpha = clamp01(elapsedMs / INTRO_MS);
