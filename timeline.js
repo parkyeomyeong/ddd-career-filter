@@ -54,11 +54,19 @@ function drawNeck(ctx, nodeY, dotY) {
   ctx.fillRect(LINE_X - w / 2, nodeY, w, d);
 }
 
+// 글자 크기 계산은 텍스트별로 한 번만 (매 프레임 measureText 반복은 아이폰에서 부담)
+const fontCache = new Map();
+const font = (s) => `700 ${s}px -apple-system, "Apple SD Gothic Neo", sans-serif`;
 function fitFont(ctx, text, maxWidth, size) {
-  let s = size;
-  do {
-    ctx.font = `700 ${s}px -apple-system, "Apple SD Gothic Neo", sans-serif`;
-  } while (ctx.measureText(text).width > maxWidth && --s > 20);
+  const key = `${text}|${maxWidth}|${size}`;
+  let s = fontCache.get(key);
+  if (s === undefined) {
+    s = size;
+    do ctx.font = font(s);
+    while (ctx.measureText(text).width > maxWidth && --s > 20);
+    fontCache.set(key, s);
+  }
+  ctx.font = font(s);
 }
 
 // 흰 글씨 + 얇은 검정 테두리

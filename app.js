@@ -3,6 +3,7 @@ const V = new URL(import.meta.url).search;
 const { parseValues, pickRandom } = await import(`./values.js${V}`);
 const { drawTimeline, progress } = await import(`./timeline.js${V}`);
 
+const VERSION = 7; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
 const VALUES_URL = './filter-values.md';
 const SIGNAL_MS = 1200; // 시작 신호 길이
 const MIME_CANDIDATES = [
@@ -58,7 +59,23 @@ function showSignal() {
   signal.classList.add('on');
 }
 
+// 진단용 (화면에만 표시, 녹화엔 안 들어감): 그리기 fps / 카메라 영상 시간 / 녹화 상태
+// 화면 멈춤 원인 구분: fps 가 떨어지면 그리기 문제, cam 시간이 멈추면 카메라 문제, 둘 다 정상이면 녹화 문제
+const ver = document.getElementById('ver');
+let frames = 0;
+let lastCamTime = -1;
+setInterval(() => {
+  const cam = camera.currentTime;
+  const camState = camera.paused ? '정지' : cam === lastCamTime ? '멈춤' : '정상';
+  lastCamTime = cam;
+  ver.textContent = `v${VERSION} · ${frames * 2}fps · 카메라 ${camState} · 녹화 ${recorder?.state ?? '-'}`;
+  frames = 0;
+}, 500);
+ver.textContent = `v${VERSION}`;
+
 function renderLoop() {
+  frames++;
+  if (camera.paused && stream) camera.play().catch(() => {}); // iOS가 카메라 영상을 멈추면 다시 재생
   const elapsed = startedAt ? performance.now() - startedAt - SIGNAL_MS : frozenElapsed;
   drawCamera();
   drawTimeline(ctx, categories, picks, elapsed);
