@@ -3,7 +3,7 @@ const V = new URL(import.meta.url).search;
 const { parseValues, pickRandom } = await import(`./values.js${V}`);
 const { drawTimeline, progress } = await import(`./timeline.js${V}`);
 
-const VERSION = 7; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
+const VERSION = 8; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
 const VALUES_URL = './filter-values.md';
 const SIGNAL_MS = 1200; // 시작 신호 길이
 const MIME_CANDIDATES = [
@@ -175,9 +175,10 @@ async function save() {
   if (navigator.canShare?.({ files: [recordedFile] })) {
     try {
       await navigator.share({ files: [recordedFile] });
+      retry(); // 저장 끝 → 다시 촬영 대기 화면으로
       return;
     } catch (err) {
-      if (err.name === 'AbortError') return;
+      if (err.name === 'AbortError') return; // 공유 시트 취소 → 저장 버튼 유지
       console.error(err);
     }
   }
@@ -185,10 +186,12 @@ async function save() {
   a.href = preview.src;
   a.download = recordedFile.name;
   a.click();
+  retry();
 }
 
 function retry() {
-  URL.revokeObjectURL(preview.src);
+  const oldUrl = preview.src;
+  setTimeout(() => URL.revokeObjectURL(oldUrl), 60_000); // 다운로드 진행 중일 수 있어 바로 해제하지 않음
   preview.removeAttribute('src');
   preview.style.display = 'none';
   canvas.style.display = 'block';
