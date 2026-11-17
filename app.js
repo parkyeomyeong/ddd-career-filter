@@ -3,7 +3,7 @@ const V = new URL(import.meta.url).search;
 const { parseValues, pickRandom } = await import(`./values.js${V}`);
 const { drawTimeline, progress } = await import(`./timeline.js${V}`);
 
-const VERSION = 9; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
+const VERSION = 10; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
 const VALUES_URL = './filter-values.md';
 const SIGNAL_MS = 1200; // 시작 신호 길이
 const MIME_CANDIDATES = [
