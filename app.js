@@ -3,7 +3,7 @@ const V = new URL(import.meta.url).search;
 const { parseValues, pickRandom } = await import(`./values.js${V}`);
 const { drawTimeline, progress } = await import(`./timeline.js${V}`);
 
-const VERSION = 8; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
+const VERSION = 9; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
 const VALUES_URL = './filter-values.md';
 const SIGNAL_MS = 1200; // 시작 신호 길이
 const MIME_CANDIDATES = [
@@ -29,6 +29,8 @@ let stream = null;
 let categories = [];
 let picks = [];
 let recorder = null;
+let videoTrack = null;
+let captureMode = '-';
 let startedAt = 0; // 0 = 대기 중 (타임라인 정지)
 let frozenElapsed = -SIGNAL_MS;
 let recordedFile = null;
@@ -68,7 +70,7 @@ setInterval(() => {
   const cam = camera.currentTime;
   const camState = camera.paused ? '정지' : cam === lastCamTime ? '멈춤' : '정상';
   lastCamTime = cam;
-  ver.textContent = `v${VERSION} · ${frames * 2}fps · 카메라 ${camState} · 녹화 ${recorder?.state ?? '-'}`;
+  ver.textContent = `v${VERSION} · ${frames * 2}fps · 카메라 ${camState} · 녹화 ${recorder?.state ?? '-'} (${captureMode})`;
   frames = 0;
 }, 500);
 ver.textContent = `v${VERSION}`;
@@ -79,6 +81,7 @@ function renderLoop() {
   const elapsed = startedAt ? performance.now() - startedAt - SIGNAL_MS : frozenElapsed;
   drawCamera();
   drawTimeline(ctx, categories, picks, elapsed);
+  if (videoTrack?.requestFrame && recorder?.state === 'recording') videoTrack.requestFrame();
   if (startedAt && progress(elapsed, categories.length).done) stopRecording();
   requestAnimationFrame(renderLoop);
 }
@@ -127,12 +130,20 @@ function startRecording() {
     return;
   }
   const mimeType = MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t)) ?? '';
-  const mixed = new MediaStream([
-    ...canvas.captureStream(30).getVideoTracks(),
-    ...stream.getAudioTracks(),
-  ]);
+  // iOS 에서 captureStream(30) 자동 캡처가 녹화 도중 프레임을 멈추는 증상 → 그린 직후 프레임을 직접 밀어 넣는다.
+  videoTrack = canvas.captureStream(0).getVideoTracks()[0];
+  captureMode = 'manual';
+  if (typeof videoTrack.requestFrame !== 'function') {
+    videoTrack.stop();
+    videoTrack = canvas.captureStream(30).getVideoTracks()[0];
+    captureMode = 'auto';
+  }
+  const mixed = new MediaStream([videoTrack, ...stream.getAudioTracks()]);
   const chunks = [];
-  recorder = new MediaRecorder(mixed, mimeType ? { mimeType } : undefined);
+  recorder = new MediaRecorder(mixed, {
+    ...(mimeType && { mimeType }),
+    videoBitsPerSecond: 4_000_000,
+  });
   recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
   recorder.onerror = (e) => {
     msg.textContent = `녹화 오류: ${e.error?.name ?? 'unknown'}`;
@@ -154,7 +165,7 @@ function startRecording() {
   };
 
   picks = categories.map((c) => pickRandom(c.values));
-  recorder.start();
+  recorder.start(1000); // 1초마다 조각 저장 (한 번에 몰아 쓰지 않게)
   startedAt = performance.now();
   showSignal();
   msg.textContent = '';
