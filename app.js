@@ -3,7 +3,7 @@ const V = new URL(import.meta.url).search;
 const { parseValues, pickRandom } = await import(`./values.js${V}`);
 const { drawTimeline, progress } = await import(`./timeline.js${V}`);
 
-const VERSION = 10; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
+const VERSION = 11; // 배포할 때마다 +1 (오른쪽 위 표시, 녹화엔 안 들어감)
 const VALUES_URL = './filter-values.md';
 const SIGNAL_MS = 1200; // 시작 신호 길이
 const MIME_CANDIDATES = [
@@ -102,7 +102,7 @@ async function openCamera() {
   try {
     categories = await loadValues();
   } catch (err) {
-    msg.textContent = `${err.message} — web 폴더에서 서버를 켰는지 확인해 주세요.`;
+    msg.textContent = `${err.message} — 프로젝트 폴더(ddd-career-filter)에서 서버를 켰는지 확인해 주세요.`;
     console.error(err);
     return;
   }
